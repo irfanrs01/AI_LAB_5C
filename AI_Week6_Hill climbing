@@ -1,0 +1,70 @@
+import random
+
+def print_board(state):
+    n = len(state)
+    for row in range(n):
+        line = ""
+        for col in range(n):
+            if state[row] == col:
+                line += "Q "
+            else:
+                line += ". "
+        print(line)
+    print()
+
+def heuristic(state):
+    
+    h = 0
+    n = len(state)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if state[i] == state[j] or abs(state[i] - state[j]) == abs(i - j):
+                h += 1
+    return h
+
+def get_neighbors(state):
+   
+    neighbors = []
+    n = len(state)
+    for row in range(n):
+        for col in range(n):
+            if col != state[row]:
+                neighbor = state.copy()
+                neighbor[row] = col
+                neighbors.append(neighbor)
+    return neighbors
+
+def hill_climbing(initial_state):
+    current = initial_state
+    current_h = heuristic(current)
+
+    while True:
+        neighbors = get_neighbors(current)
+        neighbor_h_pairs = [(heuristic(neighbor), neighbor) for neighbor in neighbors]
+
+        # Find neighbor with minimum heuristic
+        neighbor_h_pairs.sort(key=lambda x: x[0])
+        best_h, best_neighbor = neighbor_h_pairs[0]
+
+        # If no improvement, return current state
+        if best_h >= current_h:
+            return current, current_h
+
+        current = best_neighbor
+        current_h = best_h
+
+def solve_n_queens(n=4):
+ 
+    initial_state = [random.randint(0, n-1) for _ in range(n)]
+    solution, h = hill_climbing(initial_state)
+
+    if h == 0:
+        print("Solution found:")
+        print_board(solution)
+    else:
+        print("No solution found with initial state, try again.")
+        print("Final state with heuristic", h)
+        print_board(solution)
+
+# Run the solver
+solve_n_queens()

@@ -1,0 +1,89 @@
+from itertools import product
+
+def extract_symbols(expr):
+    symbols = set()
+    for c in expr:
+        if c.isalpha():
+            symbols.add(c)
+    return sorted(symbols)
+
+def replace_implications(expr):
+    # If no implication, return as is
+    if '=>' not in expr:
+        return expr
+    # Split on first occurrence of =>
+    left, right = expr.split('=>', 1)
+    left = left.strip()
+    right = right.strip()
+    # Replace implication by ((not (left)) or (right))
+    new_expr = f"((not ({left})) or ({right}))"
+    return new_expr
+
+def eval_expr(expr, model):
+    for sym, val in model.items():
+        expr = expr.replace(sym, str(val))
+    expr = expr.replace('~', ' not ')
+    expr = expr.replace('&', ' and ')
+    expr = expr.replace('|', ' or ')
+
+    # Replace implication once
+    expr = replace_implications(expr)
+
+    expr = expr.replace('<=>', '==')
+
+    return eval(expr)
+
+def truth_table(KB_sentences):
+    symbols = set()
+    for s in KB_sentences:
+        symbols |= set(extract_symbols(s))
+    symbols = sorted(symbols)
+    
+    print("Truth Table:")
+    header = symbols + KB_sentences
+    print(" | ".join(f"{h:8}" for h in header))
+    print("-" * (10 * (len(header))))
+    
+    models_where_KB_true = []
+    for values in product([True, False], repeat=len(symbols)):
+        model = dict(zip(symbols, values))
+        KB_vals = [str(eval_expr(sentence, model)) for sentence in KB_sentences]
+        row_vals = [str(model[s]) for s in symbols]
+        print(" | ".join(f"{v:8}" for v in (row_vals + KB_vals)))
+        if all(val == 'True' for val in KB_vals):
+            models_where_KB_true.append(model)
+    print("\nModels where KB is true:")
+    for m in models_where_KB_true:
+        print(m)
+    return models_where_KB_true
+
+def tt_entails(KB_sentences, query):
+    symbols = set()
+    for s in KB_sentences + [query]:
+        symbols |= set(extract_symbols(s))
+    symbols = sorted(symbols)
+
+    for values in product([True, False], repeat=len(symbols)):
+        model = dict(zip(symbols, values))
+        if all(eval_expr(sentence, model) for sentence in KB_sentences):
+            if not eval_expr(query, model):
+                return False
+    return True
+
+# Your KB and queries
+KB = [
+    "Q => P",
+    "P => ~Q",
+    "Q | R"
+]
+
+queries = [
+    "R",
+    "R => P",
+    "Q => R"
+]
+
+models = truth_table(KB)
+
+for q in queries:
+    print(f"\nDoes KB entail '{q}'? {tt_entails(KB, q)}")

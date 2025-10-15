@@ -1,0 +1,124 @@
+
+import collections
+
+# Define the GOAL_STATE for the 8-puzzle.
+# This serves as a concrete example of a "state" in a search problem.
+GOAL_STATE = (
+    (1, 2, 3),
+    (4, 5, 6),
+    (7, 8, 0)  # 0 represents the blank space
+)
+
+def find_blank(state):
+    """
+    Helper function to find the coordinates of the blank space (0) in a state.
+    """
+    for r in range(3):
+        for c in range(3):
+            if state[r][c] == 0:
+                return r, c
+    return None
+
+def get_neighbors(state):
+    """
+    Generates all valid neighbor states from the current state.
+    
+    In a search problem, this function defines the "transitions" between states.
+    For the 8-puzzle, this means moving the blank tile.
+    
+    Args:
+        state (tuple): The current puzzle state.
+        
+    Returns:
+        list: A list of new, valid puzzle states (tuples).
+    """
+    r_blank, c_blank = find_blank(state)
+    neighbors = []
+    
+    # Possible moves for the blank space: (dr, dc) -> Up, Down, Left, Right
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    for dr, dc in moves:
+        new_r, new_c = r_blank + dr, c_blank + dc
+        
+        # Check if the new position is within the grid boundaries
+        if 0 <= new_r < 3 and 0 <= new_c < 3:
+            # Create a mutable copy of the state to make a change
+            new_state_list = [list(row) for row in state]
+            
+            # Swap the blank space with the tile at the new position
+            new_state_list[r_blank][c_blank], new_state_list[new_r][new_c] = \
+                new_state_list[new_r][new_c], new_state_list[r_blank][c_blank]
+            
+            # Convert the list back to a tuple for hashability
+            new_state_tuple = tuple(tuple(row) for row in new_state_list)
+            neighbors.append(new_state_tuple)
+            
+    return neighbors
+
+def dfs_with_states(initial_state):
+    """
+    Performs a Depth-First Search on a state-space problem.
+    
+    This function explicitly uses a stack to manage states and a set to
+    track visited states, demonstrating the core concepts of DFS.
+    
+    Args:
+        initial_state (tuple): The starting configuration of the puzzle.
+        
+    Returns:
+        list: The path to the goal state if found, or None.
+    """
+    # The stack will store tuples of (state, path_to_state)
+    stack = collections.deque([(initial_state, [initial_state])])
+    
+    # The set stores visited states to prevent cycles and redundant work.
+    visited = {initial_state}
+    
+    while stack:
+        current_state, path = stack.pop()
+        
+        # Check if the current state is the goal state
+        if current_state == GOAL_STATE:
+            return path
+        
+        # Explore the neighbors of the current state
+        # The order of neighbors determines the search path (depth-first).
+        for neighbor in get_neighbors(current_state):
+            # If the neighbor has not been visited, add it to the stack
+            if neighbor not in visited:
+                visited.add(neighbor)
+                new_path = path + [neighbor]
+                stack.append((neighbor, new_path))
+                
+    return None # No solution found
+
+def print_path(path):
+    """
+    Prints the sequence of states in the solution path.
+    """
+    if path is None:
+        print("No solution found.")
+        return
+        
+    for i, state in enumerate(path):
+        print(f"--- Step {i} ---")
+        for row in state:
+            print(" ".join(map(str, row)))
+    print(f"--- Goal Reached in {len(path)-1} steps ---")
+
+# --- Example Usage ---
+if __name__ == "__main__":
+    initial_state = (
+        (1, 2, 3),
+        (4, 5, 6),
+        (7, 0, 8)
+    )
+    
+    print("Solving the 8-puzzle using DFS with explicit states...")
+    solution_path = dfs_with_states(initial_state)
+    
+    if solution_path:
+        print_path(solution_path)
+    else:
+        print("No solution found.")

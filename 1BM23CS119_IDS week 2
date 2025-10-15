@@ -1,0 +1,115 @@
+
+import collections
+
+# Define the goal state
+GOAL_STATE = (
+    (1, 2, 3),
+    (4, 5, 6),
+    (7, 8, 0)
+)
+
+def find_blank(state):
+    """Finds the coordinates of the blank space."""
+    for r in range(3):
+        for c in range(3):
+            if state[r][c] == 0:
+                return r, c
+    return None
+
+def get_neighbors(state):
+    """Generates all valid neighbor states."""
+    r_blank, c_blank = find_blank(state)
+    neighbors = []
+    moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    for dr, dc in moves:
+        new_r, new_c = r_blank + dr, c_blank + dc
+        if 0 <= new_r < 3 and 0 <= new_c < 3:
+            new_state_list = [list(row) for row in state]
+            new_state_list[r_blank][c_blank], new_state_list[new_r][new_c] = \
+                new_state_list[new_r][new_c], new_state_list[r_blank][c_blank]
+            new_state_tuple = tuple(tuple(row) for row in new_state_list)
+            neighbors.append(new_state_tuple)
+    return neighbors
+
+def depth_limited_search(initial_state, limit):
+    """
+    The DLS function is a core component of IDS.
+    """
+    stack = collections.deque([(initial_state, [initial_state])])
+    visited = {initial_state}
+    
+    while stack:
+        current_state, path = stack.pop()
+        
+        if current_state == GOAL_STATE:
+            return path
+        
+        if len(path) > limit:
+            continue
+            
+        for neighbor in get_neighbors(current_state):
+            if neighbor not in visited:
+                visited.add(neighbor)
+                new_path = path + [neighbor]
+                stack.append((neighbor, new_path))
+                
+    return None
+
+def iterative_deepening_search(initial_state):
+    """
+    Solves the 8-puzzle using Iterative Deepening Search (IDS).
+    
+    IDS performs a series of DLS searches, with the depth limit increasing
+    with each iteration.
+    
+    Args:
+        initial_state (tuple): The starting configuration.
+        
+    Returns:
+        list: The path to the goal state if a solution exists.
+    """
+    # The depth limit starts at 0 and increases with each iteration.
+    depth = 0
+    # A safe upper bound for the depth to prevent infinite loops on unsolvable puzzles
+    # For a 3x3 puzzle, the maximum path length is about 31 steps.
+    max_depth = 50 
+    
+    while depth < max_depth:
+        print(f"Trying depth limit: {depth}")
+        solution = depth_limited_search(initial_state, limit=depth)
+        
+        if solution:
+            return solution
+        
+        # Increment the depth limit for the next iteration
+        depth += 1
+        
+    return None # No solution found within the maximum depth
+
+def print_path(path):
+    """Prints the sequence of states in the solution path."""
+    if path is None:
+        print("No solution found.")
+        return
+        
+    for i, state in enumerate(path):
+        print(f"--- Step {i} ---")
+        for row in state:
+            print(" ".join(map(str, row)))
+    print(f"--- Goal Reached in {len(path)-1} steps ---")
+
+# --- Example Usage ---
+if __name__ == "__main__":
+    initial_state = (
+        (1, 2, 3),
+        (4, 5, 6),
+        (7, 0, 8)
+    )
+
+    print("Solving the 8-puzzle with IDS...")
+    solution_path = iterative_deepening_search(initial_state)
+
+    if solution_path:
+        print_path(solution_path)
+    else:
+        print("Could not find a solution.")

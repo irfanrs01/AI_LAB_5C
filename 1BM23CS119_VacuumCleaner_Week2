@@ -1,0 +1,48 @@
+class VacuumCleaner:
+    def __init__(self, room_A, room_B, vacuum_pos):
+        self.room_A = room_A
+        self.room_B = room_B
+        self.vacuum_pos = vacuum_pos
+
+    def show_status(self):
+        print(f"Vacuum in Room {self.vacuum_pos} | Room A: {self.room_A}, Room B: {self.room_B}")
+
+    def clean(self):
+        print("Initial State:")
+        self.show_status()
+        print("------")
+
+        steps = 0
+        while self.room_A == "Dirty" or self.room_B == "Dirty":
+            steps += 1
+            print(f"Step {steps}:")
+
+            if self.vacuum_pos == "A":
+                if self.room_A == "Dirty":
+                    print("Room A is Dirty → Cleaned!")
+                    self.room_A = "Clean"
+                else:
+                    print("Room A is Clean → Move to Room B")
+                    self.vacuum_pos = "B"
+
+            elif self.vacuum_pos == "B":
+                if self.room_B == "Dirty":
+                    print("Room B is Dirty → Cleaned!")
+                    self.room_B = "Clean"
+                else:
+                    print("Room B is Clean → Move to Room A")
+                    self.vacuum_pos = "A"
+
+            self.show_status()
+            print("------")
+
+        print("Goal Reached! Both rooms are clean.")
+
+
+# ---- Main Program ----
+room_A = input("Enter status of Room A (Clean/Dirty): ").capitalize()
+room_B = input("Enter status of Room B (Clean/Dirty): ").capitalize()
+vacuum_pos = input("Enter initial position of Vacuum (A/B): ").upper()
+
+agent = VacuumCleaner(room_A, room_B, vacuum_pos)
+agent.clean()

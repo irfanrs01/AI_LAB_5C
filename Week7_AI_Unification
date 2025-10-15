@@ -1,0 +1,123 @@
+class Var:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return isinstance(other, Var) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+class Const:
+    def __init__(self, name):
+        self.name = name
+
+    def __repr__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return isinstance(other, Const) and self.name == other.name
+
+    def __hash__(self):
+        return hash(self.name)
+
+class Func:
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args  # list of terms
+
+    def __repr__(self):
+        return f"{self.name}({', '.join(map(str, self.args))})"
+
+    def __eq__(self, other):
+        return (isinstance(other, Func) and self.name == other.name and
+                len(self.args) == len(other.args) and
+                all(x == y for x, y in zip(self.args, other.args)))
+
+    def __hash__(self):
+        return hash((self.name, tuple(self.args)))
+
+def is_variable(x):
+    return isinstance(x, Var)
+
+def is_compound(x):
+    return isinstance(x, Func)
+
+def occurs_check(var, term, subst):
+    if var == term:
+        return True
+    elif is_variable(term) and term in subst:
+        return occurs_check(var, subst[term], subst)
+    elif is_compound(term):
+        return any(occurs_check(var, arg, subst) for arg in term.args)
+    else:
+        return False
+
+def unify(x, y, subst={}, depth=0):
+    indent = "  " * depth  # for pretty printing nested calls
+    if subst is None:
+        return None
+    elif x == y:
+        # Terms are already identical
+        print(f"{indent}Unify {x} and {y}: terms are identical, no substitution needed")
+        return subst
+    elif is_variable(x):
+        return unify_var(x, y, subst, depth)
+    elif is_variable(y):
+        return unify_var(y, x, subst, depth)
+    elif is_compound(x) and is_compound(y):
+        if x.name != y.name or len(x.args) != len(y.args):
+            print(f"{indent}Cannot unify different function symbols or different arity: {x} and {y}")
+            return None
+        for x_arg, y_arg in zip(x.args, y.args):
+            subst = unify(x_arg, y_arg, subst, depth + 1)
+            if subst is None:
+                return None
+        return subst
+    else:
+        print(f"{indent}Failed to unify {x} and {y}")
+        return None
+
+def unify_var(var, x, subst, depth):
+    indent = "  " * depth
+    if var in subst:
+        print(f"{indent}Variable {var} already substituted with {subst[var]}, try to unify {subst[var]} and {x}")
+        return unify(subst[var], x, subst, depth + 1)
+    elif is_variable(x) and x in subst:
+        print(f"{indent}Variable {x} already substituted with {subst[x]}, try to unify {var} and {subst[x]}")
+        return unify(var, subst[x], subst, depth + 1)
+    elif occurs_check(var, x, subst):
+        print(f"{indent}Occurs check failed: {var} occurs in {x}")
+        return None
+    else:
+        print(f"{indent}Substitute {var} with {x}")
+        subst_copy = subst.copy()
+        subst_copy[var] = x
+        print(f"{indent}Current substitution: {subst_copy}")
+        return subst_copy
+
+
+if __name__ == "__main__":
+    # Define terms:
+    x = Var('x')
+    y = Var('y')
+    f1 = Func('f', [x, Const('a')])
+    f2 = Func('f', [Const('b'), y])
+
+    print("Start statement:")
+    print(f"  Term 1: {f1}")
+    print(f"  Term 2: {f2}")
+    print("\nUnification steps:")
+
+    result = unify(f1, f2, {})
+
+    print("\nEnd state:")
+    if result is None:
+        print("  Unification failed.")
+    else:
+        print("  Final substitution:")
+        for var, val in result.items():
+            print(f"    {var} -> {val}")

@@ -1,0 +1,118 @@
+import math
+
+# Print the board
+def print_board(board):
+    for row in board:
+        print(" | ".join(row))
+        print("-" * 5)
+
+# Check winner
+def check_winner(board):
+    # Rows
+    for row in board:
+        if row[0] == row[1] == row[2] != " ":
+            return row[0]
+    # Columns
+    for col in range(3):
+        if board[0][col] == board[1][col] == board[2][col] != " ":
+            return board[0][col]
+    # Diagonals
+    if board[0][0] == board[1][1] == board[2][2] != " ":
+        return board[0][0]
+    if board[0][2] == board[1][1] == board[2][0] != " ":
+        return board[0][2]
+    return None
+
+# Check if moves left
+def is_moves_left(board):
+    for row in board:
+        if " " in row:
+            return True
+    return False
+
+# Minimax function
+def minimax(board, depth, isMax):
+    winner = check_winner(board)
+    if winner == "X":  # Computer
+        return 10 - depth
+    if winner == "O":  # Human
+        return depth - 10
+    if not is_moves_left(board):
+        return 0
+
+    if isMax:  # Computer turn
+        best = -math.inf
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == " ":
+                    board[i][j] = "X"
+                    best = max(best, minimax(board, depth + 1, False))
+                    board[i][j] = " "
+        return best
+    else:  # Human turn
+        best = math.inf
+        for i in range(3):
+            for j in range(3):
+                if board[i][j] == " ":
+                    board[i][j] = "O"
+                    best = min(best, minimax(board, depth + 1, True))
+                    board[i][j] = " "
+        return best
+
+# Find best move for computer
+def best_move(board):
+    bestVal = -math.inf
+    move = (-1, -1)
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == " ":
+                board[i][j] = "X"
+                moveVal = minimax(board, 0, False)
+                board[i][j] = " "
+                if moveVal > bestVal:
+                    move = (i, j)
+                    bestVal = moveVal
+    return move
+
+# Game loop
+def play_game():
+    board = [[" " for _ in range(3)] for _ in range(3)]
+    human = "O"
+    computer = "X"
+
+    print("Tic-Tac-Toe Game!")
+    print_board(board)
+
+    while True:
+        # Human move
+        row, col = map(int, input("Enter row and col (0-2): ").split())
+        if board[row][col] != " ":
+            print("Cell already taken!")
+            continue
+        board[row][col] = human
+
+        if check_winner(board) == human:
+            print_board(board)
+            print("You win!")
+            break
+        if not is_moves_left(board):
+            print_board(board)
+            print("It's a Draw!")
+            break
+
+        # Computer move
+        print("Computer is thinking...")
+        r, c = best_move(board)
+        board[r][c] = computer
+
+        print_board(board)
+
+        if check_winner(board) == computer:
+            print("Computer wins!")
+            break
+        if not is_moves_left(board):
+            print("It's a Draw!")
+            break
+
+
+play_game()
